@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Tags,
   Sliders,
+  Globe,
   X,
 } from "lucide-react"
 
@@ -15,6 +16,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
   { id: "products", label: "Products", icon: Package, href: "/admin/products" },
   { id: "categories", label: "Categories", icon: Tags, href: "/admin/categories" },
+  { id: "countries", label: "Countries", icon: Globe, href: "/admin/countries" },
   { id: "sliders", label: "Sliders", icon: Sliders, href: "/admin/sliders" },
   { id: "orders", label: "Orders", icon: ShoppingCart, href: "/admin/orders" },
   { id: "customers", label: "Customers", icon: Users, href: "/admin/customers" },

@@ -55,6 +55,17 @@ export const checkoutService = {
 
   async createCheckoutSession(checkoutData: CheckoutData): Promise<CheckoutSession> {
     try {
+      // Map country names to ISO country codes for Stripe
+      const countryToISOMapping: Record<string, string> = {
+        'UAE': 'AE',
+        'Germany': 'DE',
+        'UK': 'GB',
+        'USA': 'US',
+        'Pakistan': 'PK'
+      }
+
+      const countryCode = countryToISOMapping[checkoutData.shipping_address.country] || 'US'
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: checkoutData.items.map(item => ({
@@ -73,7 +84,7 @@ export const checkoutService = {
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
         customer_email: checkoutData.shipping_address.email,
         shipping_address_collection: {
-          allowed_countries: [checkoutData.shipping_address.country as any],
+          allowed_countries: [countryCode as any],
         },
       })
 

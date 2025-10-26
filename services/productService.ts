@@ -73,6 +73,7 @@ export interface Product {
   color?: string
   size?: string
   gender?: "men" | "women" | "unisex" | "kids"
+  country?: string
   is_active: boolean
   is_featured: boolean
   is_trending: boolean
@@ -197,19 +198,19 @@ class ProductService {
       comment?: string
     },
   ): Promise<{ message: string; review_id: number }> {
-    return apiClient.post("/reviews", { product_id: productId, ...review })
+    return apiClient?.post("/reviews", { product_id: productId, ...review })
   }
 
   async createProduct(product: Omit<Product, "id" | "created_at" | "updated_at">): Promise<Product> {
-    return apiClient.post<Product>("/products", product)
+    return apiClient?.post<Product>("/products", product)
   }
 
   async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
-    return apiClient.put<Product>(`/products/${id}`, product)
+    return apiClient?.put<Product>(`/products/${id}`, product)
   }
 
   async deleteProduct(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/products/${id}`)
+    return apiClient?.delete<{ message: string }>(`/products/${id}`)
   }
 
   // New methods for category listing
@@ -227,22 +228,22 @@ class ProductService {
 
   async getFlashDeals(limit = 8): Promise<Product[]> {
     const response = await this.getProducts({ on_sale: true, limit, sort: "created_at", order: "DESC" })
-    return response.data
+    return response?.data
   }
 
   async getTopTrends(limit = 6): Promise<Product[]> {
     const response = await this.getProducts({ trending: true, limit })
-    return response.data
+    return response?.data
   }
 
   async getSuperDeals(limit = 8): Promise<Product[]> {
     const response = await this.getProducts({ on_sale: true, limit, sort: "discount", order: "DESC" })
-    return response.data
+    return response?.data
   }
 
   async getRandomProducts(limit = 4): Promise<Product[]> {
     const response = await this.getProducts({ limit, sort: "random" })
-    return response.data
+    return response?.data
   }
 }
 

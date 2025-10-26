@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Plus, Package } from 'lucide-react'
+import { Edit, Trash2, Plus, Package, Loader2 } from 'lucide-react'
 import { toast } from "sonner"
 import Image from "next/image"
 import { productService, type Product } from "@/services/productService"
 import { Loader } from "@/components/ui/loader"
 import { categoryService, type Category } from "@/services/categoryService"
+import { countryService, type Country } from "@/services/countryService"
 
 interface ProductFormData {
   name: string
@@ -48,6 +49,7 @@ interface ProductFormData {
 export function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [countries, setCountries] = useState<Country[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -84,6 +86,7 @@ export function ProductManagement() {
   useEffect(() => {
     fetchProducts()
     fetchCategories()
+    fetchCountries()
   }, [])
 
   const fetchProducts = async () => {
@@ -105,6 +108,16 @@ export function ProductManagement() {
       setCategories(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("Failed to fetch categories:", error)
+    }
+  }
+
+  const fetchCountries = async () => {
+    try {
+      const data = await countryService.getEnabledCountries()
+      setCountries(Array.isArray(data.countries) ? data.countries : [])
+    } catch (error) {
+      console.error("Failed to fetch countries:", error)
+      toast.error("Failed to fetch countries")
     }
   }
 
@@ -175,7 +188,7 @@ export function ProductManagement() {
       color: product.color || "",
       size: product.size || "",
       gender: product.gender || "unisex",
-      country: product?.country || "Pakistan",
+      country: product?.country || "",
       is_active: product.is_active ?? true,
       is_featured: product.is_featured ?? false,
       is_trending: product.is_trending ?? false,
@@ -545,11 +558,14 @@ export function ProductManagement() {
                       <SelectValue placeholder="Select a country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="UAE">UAE</SelectItem>
-                      <SelectItem value="Germany">Germany</SelectItem>
-                      <SelectItem value="UK">UK</SelectItem>
-                      <SelectItem value="USA">USA</SelectItem>
-                      <SelectItem value="Pakistan">Pakistan</SelectItem>
+                      {countries.map((country) => (
+                        <SelectItem key={country.id} value={country.code}>
+                          <div className="flex items-center gap-2">
+                            {country.flag && <span>{country.flag}</span>}
+                            {country.name}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -557,7 +573,7 @@ export function ProductManagement() {
               </div>
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button type="submit" className="flex-1" disabled={submitting}>
-                   {submitting ? <Loader className="mr-2 h-4 w-4" /> : null}
+                   {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {editingProduct ? "Update" : "Create"} Product
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>

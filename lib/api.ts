@@ -37,9 +37,9 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     }
 
     console.log("Using token:", endpoint ,"\n",this.token)
@@ -97,6 +97,13 @@ class ApiClient {
   async put<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async patch<T>(endpoint: string, data?: any): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     })
   }
