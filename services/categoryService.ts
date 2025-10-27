@@ -7,6 +7,7 @@ export interface Category {
   description?: string
   parent_id?: number
   image_url?: string
+  country: string
   is_active: boolean
   sort_order: number
   product_count: number
@@ -20,6 +21,7 @@ export interface CreateCategoryData {
   description?: string
   parent_id?: number
   image_url?: string
+  country: string
   is_active?: boolean
   sort_order?: number
 }

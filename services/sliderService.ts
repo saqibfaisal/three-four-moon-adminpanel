@@ -29,6 +29,7 @@ export interface CreateSliderData {
   text_position?: "left" | "center" | "right"
   background_color?: string
   text_color?: string
+  is_active?: boolean
   sort_order?: number
   start_date?: string
   end_date?: string
@@ -65,8 +66,8 @@ class SliderService {
     return apiClient.put<Slider>(`/sliders/${id}/order`, { sort_order: sortOrder })
   }
 
-  async toggleSliderStatus(id: number): Promise<Slider> {
-    return apiClient.put<Slider>(`/sliders/${id}/status`)
+  async toggleSliderStatus(id: number, isActive: boolean): Promise<Slider> {
+    return apiClient.put<Slider>(`/sliders/${id}/status`, { is_active: isActive })
   }
 }
 

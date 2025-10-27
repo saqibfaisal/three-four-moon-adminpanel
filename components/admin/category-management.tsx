@@ -14,10 +14,12 @@ import { toast } from "sonner"
 import Image from "next/image"
 import { Loader } from "@/components/ui/loader"
 import { categoryService, type Category, type CreateCategoryData, type UpdateCategoryData } from "@/services/categoryService"
+import { countryService, type Country } from "@/services/countryService"
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<Category[]>([])
   const [parentCategories, setParentCategories] = useState<Category[]>([])
+  const [countries, setCountries] = useState<Country[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
@@ -26,11 +28,23 @@ export function CategoryManagement() {
     description: "",
     parent_id: undefined,
     image_url: "",
+    country: "",
   })
 
   useEffect(() => {
     fetchCategories()
+    fetchCountries()
   }, [])
+
+  const fetchCountries = async () => {
+    try {
+      const data = await countryService.getEnabledCountries()
+      setCountries(data.countries || [])
+    } catch (error) {
+      toast.error("Failed to fetch countries")
+      console.error("Fetch countries error:", error)
+    }
+  }
 
   const fetchCategories = async () => {
     try {
@@ -57,15 +71,16 @@ export function CategoryManagement() {
         description: formData.description?.trim() || undefined,
         parent_id: formData.parent_id || undefined,
         image_url: formData.image_url?.trim() || undefined,
+        country: formData.country,
       }
 
       if (editingCategory) {
         const updatedCategory = await categoryService.updateCategory(editingCategory.id, categoryData)
-        setCategories((prev) => prev.map((cat) => (cat.id === editingCategory.id ? updatedCategory : cat)))
+        setCategories((prev) => prev.map((cat) => (cat.id === editingCategory.id ? updatedCategory.category : cat)))
         toast.success("Category updated successfully")
       } else {
         const newCategory = await categoryService.createCategory(categoryData)
-        setCategories((prev) => [...prev, newCategory])
+        setCategories((prev) => [...prev, newCategory.category])
         toast.success("Category created successfully")
       }
 
@@ -86,6 +101,7 @@ export function CategoryManagement() {
       description: category.description || "",
       parent_id: category.parent_id,
       image_url: category.image_url || "",
+      country: category.country || "",
     })
     setIsDialogOpen(true)
   }
@@ -111,6 +127,7 @@ export function CategoryManagement() {
       description: "",
       parent_id: undefined,
       image_url: "",
+      country: "",
     })
     setEditingCategory(null)
   }
@@ -189,6 +206,23 @@ export function CategoryManagement() {
                           {category.name}
                         </SelectItem>
                       ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country *</Label>
+                <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {countries.map((country) => (
+                      <SelectItem key={country.id} value={country.name}>
+                        {country.flag && <span>{country.flag}</span>}
+                        {country.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

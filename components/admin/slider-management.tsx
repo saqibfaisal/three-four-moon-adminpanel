@@ -30,8 +30,8 @@ export function SliderManagement() {
     text_position: "left",
     is_active: true,
     sort_order: 0,
-    start_date:new Date().toISOString().split('T')[0], // Default to today
-    end_date:new Date().toISOString().split('T')[0], // Default to today
+    start_date: new Date().toISOString().split('T')[0], // Default to today
+    end_date: new Date().toISOString().split('T')[0], // Default to today
   })
 
   useEffect(() => {
@@ -55,14 +55,21 @@ export function SliderManagement() {
     e.preventDefault()
 
     try {
+      // Ensure all data is properly typed and is_active is always a boolean
+      const submitData: CreateSliderData = {
+        ...formData,
+        is_active: !!formData.is_active, // Convert to boolean using double negation
+        sort_order: Number(formData.sort_order) || 0,
+      }
+
       if (editingSlider) {
-        const updatedSlider = await sliderService.updateSlider(editingSlider.id, formData)
+        const updatedSlider = await sliderService.updateSlider(editingSlider.id, submitData)
         setSliders(prev => prev.map(slider => 
           slider.id === editingSlider.id ? updatedSlider : slider
         ))
         toast.success("Slider updated successfully")
       } else {
-        const newSlider = await sliderService.createSlider(formData)
+        const newSlider = await sliderService.createSlider(submitData)
         setSliders(prev => [...prev, newSlider])
         toast.success("Slider created successfully")
       }
@@ -85,7 +92,7 @@ export function SliderManagement() {
       button_text: slider.button_text || "",
       button_url: slider.button_url || "",
       text_position: slider.text_position,
-      is_active: slider.is_active,
+      is_active: slider.is_active ? true : false, // Explicit boolean conversion
       sort_order: slider.sort_order,
       start_date: slider.start_date ? slider.start_date.split('T')[0] : "",
       end_date: slider.end_date ? slider.end_date.split('T')[0] : "",
