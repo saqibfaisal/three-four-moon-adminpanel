@@ -202,16 +202,6 @@ export function OrderManagement() {
             <option key={country} value={country}>{country === 'US' ? 'USA' : country}</option>
           ))}
         </select>
-        <select
-          value={currencyFilter}
-          onChange={(e) => setCurrencyFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-        >
-          <option value="">All Currencies</option>
-          {currencies.map(currency => (
-            <option key={currency} value={currency}>{currency}</option>
-          ))}
-        </select>
       </div>
 
       {/* Orders List */}
