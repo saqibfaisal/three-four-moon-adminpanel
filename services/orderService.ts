@@ -18,12 +18,24 @@ export interface CreateOrderData {
   address: string
 }
 
+export interface OrderResponse {
+  orders: Order[]
+  total: number
+  page: number
+  limit: number
+}
+
 class OrderService {
   async getOrders(): Promise<Order[]> {
     return apiClient.get<Order[]>("/orders")
   }
-  async getAllOrders(): Promise<Order[]> {
-    return apiClient.get<Order[]>("/orders/admin")
+  async getAllOrders(params?: { page?: number; limit?: number; status?: string; user_id?: string }): Promise<OrderResponse> {
+    const query = new URLSearchParams()
+    if (params?.page) query.append('page', params.page.toString())
+    if (params?.limit) query.append('limit', params.limit.toString())
+    if (params?.status) query.append('status', params.status)
+    if (params?.user_id) query.append('user_id', params.user_id)
+    return apiClient.get<OrderResponse>(`/orders/admin?${query.toString()}`)
   }
 
   async getOrderById(id: string): Promise<Order> {

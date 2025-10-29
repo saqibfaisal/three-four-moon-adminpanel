@@ -57,10 +57,16 @@ export function OrderManagement() {
   const [currencyFilter, setCurrencyFilter] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     fetchOrders()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, countryFilter, currencyFilter])
 
   const fetchOrders = async () => {
     try {
@@ -148,6 +154,9 @@ export function OrderManagement() {
     const matchesCurrency = !currencyFilter || order.currency === currencyFilter;
     return matchesSearch && matchesStatus && matchesCountry && matchesCurrency
   })
+
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
 
   if (isLoading) {
     return <Loader />
@@ -237,7 +246,7 @@ export function OrderManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
+              {paginatedOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{order.order_number}</div>
@@ -296,7 +305,7 @@ export function OrderManagement() {
 
         {/* Mobile Cards */}
         <div className="md:hidden">
-          {filteredOrders.map((order) => (
+          {paginatedOrders.map((order) => (
             <div key={order.id} className="p-4 border-b last:border-b-0 space-y-3">
               <div>
                 <div className="flex justify-between items-start">
@@ -349,6 +358,29 @@ export function OrderManagement() {
               ? "Try adjusting your filters"
               : "Orders will appear here when customers make purchases"}
           </p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center mt-4 px-4">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
 

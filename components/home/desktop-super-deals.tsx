@@ -86,9 +86,9 @@ export function DesktopSuperDeals() {
             </Button>
           </div>
         </div>
-        <Link href="/sale" className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
+        {/* <Link href="/sale" className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
           Save big now! <ChevronRight className="h-4 w-4" />
-        </Link>
+        </Link> */}
       </div>
 
       <div className="grid grid-cols-6 gap-4">

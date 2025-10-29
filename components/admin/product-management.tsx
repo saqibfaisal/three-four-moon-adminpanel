@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Pagination } from "@/components/ui/pagination"
 import { Edit, Trash2, Plus, Package, Loader2 } from 'lucide-react'
 import { toast } from "sonner"
 import Image from "next/image"
@@ -42,8 +43,8 @@ interface ProductFormData {
   is_trending: boolean
   is_new_arrival: boolean
   is_on_sale: boolean
-  primary_image: string
-  category_ids: number[]
+  images: Array<{ url: string; is_primary: boolean; alt_text?: string }>
+  category_id: number
 }
 
 export function ProductManagement() {
@@ -54,6 +55,10 @@ export function ProductManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [pageSize] = useState(20)
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -79,24 +84,32 @@ export function ProductManagement() {
     is_trending: false,
     is_new_arrival: false,
     is_on_sale: false,
-    primary_image: "",
-    category_ids: [],
+    images: [],
+    category_id: 0,
   })
 
   useEffect(() => {
-    fetchProducts()
+    fetchProducts(1)
     fetchCategories()
     fetchCountries()
   }, [])
 
-  const fetchProducts = async () => {
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    fetchProducts(page)
+  }
+
+  const fetchProducts = async (page = 1) => {
     try {
       setLoading(true)
-      const data: any = await productService.getProducts()
-      setProducts(Array.isArray(data.products) ? data.products : [])
+      const response: any = await productService.getProducts({ page, limit: pageSize })
+      setProducts(Array.isArray(response.products) ? response.products : [])
+      setTotalProducts(response.pagination?.total || 0)
+      setTotalPages(response.pagination?.pages || 1)
+      setCurrentPage(page)
     } catch (error) {
-      toast.error("Failed to fetch products")
       console.error("Fetch products error:", error)
+      toast.error("Failed to fetch products")
     } finally {
       setLoading(false)
     }
@@ -105,7 +118,7 @@ export function ProductManagement() {
   const fetchCategories = async () => {
     try {
       const data = await categoryService.getCategories()
-      setCategories(Array.isArray(data) ? data : [])
+      setCategories(Array.isArray(data.categories) ? data.categories : [])
     } catch (error) {
       console.error("Failed to fetch categories:", error)
     }
@@ -140,6 +153,13 @@ export function ProductManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Client-side validation
+    if (!formData.category_id || formData.category_id === 0) {
+      toast.error("Please select a category")
+      return
+    }
+
     setSubmitting(true)
     try {
       const productData: any = {
@@ -164,40 +184,51 @@ export function ProductManagement() {
       console.error("Save product error:", error)
     } finally {
       setSubmitting(false) // ✅ loader band
-      fetchProducts()
+      fetchProducts(currentPage)
     }
   }
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product)
-    setFormData({
-      name: product.name || "",
-      slug: product.slug || "",
-      description: product.description || "",
-      short_description: product.short_description || "",
-      sku: product.sku || "",
-      price: product.price || 0,
-      compare_price: product.compare_price || 0,
-      cost_price: product.cost_price || 0,
-      inventory_quantity: product.inventory_quantity || 0,
-      weight: product.weight || 0,
-      dimensions: product.dimensions || "",
-      material: product.material || "",
-      care_instructions: product.care_instructions || "",
-      brand: product.brand || "",
-      color: product.color || "",
-      size: product.size || "",
-      gender: product.gender || "unisex",
-      country: product?.country || "",
-      is_active: product.is_active ?? true,
-      is_featured: product.is_featured ?? false,
-      is_trending: product.is_trending ?? false,
-      is_new_arrival: product.is_new_arrival ?? false,
-      is_on_sale: product.is_on_sale ?? false,
-      primary_image: product.primary_image || "",
-      category_ids: [],
-    })
-    setIsDialogOpen(true)
+  const handleEdit = async (product: Product) => {
+    try {
+      // Fetch full product details including categories
+      const fullProduct = await productService.getProduct(product.id)
+      setEditingProduct(fullProduct)
+      setFormData({
+        name: fullProduct.name || "",
+        slug: fullProduct.slug || "",
+        description: fullProduct.description || "",
+        short_description: fullProduct.short_description || "",
+        sku: fullProduct.sku || "",
+        price: fullProduct.price || 0,
+        compare_price: fullProduct.compare_price || 0,
+        cost_price: fullProduct.cost_price || 0,
+        inventory_quantity: fullProduct.inventory_quantity || 0,
+        weight: fullProduct.weight || 0,
+        dimensions: fullProduct.dimensions || "",
+        material: fullProduct.material || "",
+        care_instructions: fullProduct.care_instructions || "",
+        brand: fullProduct.brand || "",
+        color: fullProduct.color || "",
+        size: fullProduct.size || "",
+        gender: fullProduct.gender || "unisex",
+        country: fullProduct?.country || "",
+        is_active: fullProduct.is_active ?? true,
+        is_featured: fullProduct.is_featured ?? false,
+        is_trending: fullProduct.is_trending ?? false,
+        is_new_arrival: fullProduct.is_new_arrival ?? false,
+        is_on_sale: fullProduct.is_on_sale ?? false,
+        images: fullProduct.images ? fullProduct.images.map(img => ({
+          url: img.image_url,
+          is_primary: img.is_primary,
+          alt_text: img.alt_text || ""
+        })) : [],
+        category_id: fullProduct.categories && fullProduct.categories.length > 0 ? fullProduct.categories[0].id : 0,
+      })
+      setIsDialogOpen(true)
+    } catch (error) {
+      toast.error("Failed to fetch product details")
+      console.error("Fetch product details error:", error)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -207,6 +238,8 @@ export function ProductManagement() {
       await productService.deleteProduct(id)
       setProducts((prev) => prev.filter((product) => product.id !== id))
       toast.success("Product deleted successfully")
+      // Refetch to ensure pagination is correct
+      fetchProducts(currentPage)
     } catch (error) {
       toast.error("Failed to delete product")
       console.error("Delete product error:", error)
@@ -238,8 +271,8 @@ export function ProductManagement() {
       is_trending: false,
       is_new_arrival: false,
       is_on_sale: false,
-      primary_image: "",
-      category_ids: [],
+      images: [],
+      category_id: 0,
     })
     setEditingProduct(null)
   }
@@ -255,7 +288,10 @@ export function ProductManagement() {
           <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
           <p className="text-gray-600">Manage your product catalog</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) resetForm()
+        }}>
           <DialogTrigger asChild>
             <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -470,29 +506,82 @@ export function ProductManagement() {
                 </div>
               </div>
 
-              {/* Image */}
+              {/* Images */}
               <div className="space-y-4 p-4 border rounded-lg">
-                <h3 className="text-lg font-medium">Product Image</h3>
-                <div>
-                  <Label htmlFor="primary_image">Primary Image URL</Label>
-                  <Input
-                    id="primary_image"
-                    type="url"
-                    value={formData.primary_image}
-                    onChange={(e) => setFormData({ ...formData, primary_image: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {formData.primary_image && (
-                    <div className="mt-2">
-                      <Image
-                        src={formData.primary_image || "/placeholder.svg"}
-                        alt="Preview"
-                        width={200}
-                        height={200}
-                        className="rounded border object-cover"
-                      />
+                <h3 className="text-lg font-medium">Product Images</h3>
+                <div className="space-y-4">
+                  {formData.images.map((image, index) => (
+                    <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="radio"
+                            id={`primary-${index}`}
+                            name="primary-image"
+                            checked={image.is_primary}
+                            onChange={() => {
+                              const updatedImages = formData.images.map((img, i) => ({
+                                ...img,
+                                is_primary: i === index
+                              }))
+                              setFormData({ ...formData, images: updatedImages })
+                            }}
+                          />
+                          <Label htmlFor={`primary-${index}`} className="text-sm">
+                            Primary Image
+                          </Label>
+                        </div>
+                        <Input
+                          type="url"
+                          value={image.url}
+                          onChange={(e) => {
+                            const updatedImages = [...formData.images]
+                            updatedImages[index].url = e.target.value
+                            setFormData({ ...formData, images: updatedImages })
+                          }}
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        {image.url && (
+                          <div className="mt-2">
+                            <Image
+                              src={image.url || "/placeholder.svg"}
+                              alt={`Preview ${index + 1}`}
+                              width={100}
+                              height={100}
+                              className="rounded border object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const updatedImages = formData.images.filter((_, i) => i !== index)
+                          // If we removed the primary image, make the first one primary
+                          if (image.is_primary && updatedImages.length > 0) {
+                            updatedImages[0].is_primary = true
+                          }
+                          setFormData({ ...formData, images: updatedImages })
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newImage = { url: "", is_primary: formData.images.length === 0, alt_text: "" }
+                      setFormData({ ...formData, images: [...formData.images, newImage] })
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Image
+                  </Button>
                 </div>
               </div>
 
@@ -549,6 +638,29 @@ export function ProductManagement() {
               </div>
               <div className="space-y-4 p-4 border rounded-lg">
                 <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select
+                    value={formData.category_id.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: Number.parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {(!formData.category_id || formData.category_id === 0) && (
+                    <p className="text-sm text-red-600 mt-1">Please select a category</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-4 p-4 border rounded-lg">
+                <div>
                   <Label htmlFor="country">Country *</Label>
                   <Select
                     value={formData.country}
@@ -559,7 +671,7 @@ export function ProductManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       {countries.map((country) => (
-                        <SelectItem key={country.id} value={country.code}>
+                        <SelectItem key={country.id} value={country.name}>
                           <div className="flex items-center gap-2">
                             {country.flag && <span>{country.flag}</span>}
                             {country.name}
@@ -734,6 +846,17 @@ export function ProductManagement() {
           ))}
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,7 @@ import {
   Sliders,
   Globe,
   X,
+  Star,
 } from "lucide-react"
 
 const menuItems = [
@@ -20,6 +21,7 @@ const menuItems = [
   { id: "sliders", label: "Sliders", icon: Sliders, href: "/admin/sliders" },
   { id: "orders", label: "Orders", icon: ShoppingCart, href: "/admin/orders" },
   { id: "customers", label: "Customers", icon: Users, href: "/admin/customers" },
+  { id: "reviews", label: "Reviews", icon: Star, href: "/admin/reviews" },
 ]
 
 interface AdminSidebarProps {
