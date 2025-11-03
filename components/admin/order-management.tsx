@@ -55,6 +55,7 @@ export function OrderManagement() {
   const [statusFilter, setStatusFilter] = useState("")
   const [countryFilter, setCountryFilter] = useState("")
   const [currencyFilter, setCurrencyFilter] = useState("")
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -66,7 +67,7 @@ export function OrderManagement() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, statusFilter, countryFilter, currencyFilter])
+  }, [searchTerm, statusFilter, countryFilter, currencyFilter, paymentStatusFilter])
 
   const fetchOrders = async () => {
     try {
@@ -86,6 +87,16 @@ export function OrderManagement() {
     } catch (error) {
       console.error("Failed to update order status:", error)
       alert("Failed to update order status")
+    }
+  }
+
+  const handlePaymentStatusUpdate = async (orderId: string, newPaymentStatus: string) => {
+    try {
+      await orderService.updatePaymentStatus(orderId, newPaymentStatus)
+      setOrders(orders.map((order) => (order.id === orderId ? { ...order, payment_status: newPaymentStatus } : order)))
+    } catch (error) {
+      console.error("Failed to update payment status:", error)
+      alert("Failed to update payment status")
     }
   }
 
@@ -141,6 +152,36 @@ export function OrderManagement() {
     }
   }
 
+  const getPaymentStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Package className="h-4 w-4 text-yellow-500" />
+      case "paid":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "failed":
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case "refunded":
+        return <XCircle className="h-4 w-4 text-orange-500" />
+      default:
+        return <Package className="h-4 w-4 text-gray-500" />
+    }
+  }
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "paid":
+        return "bg-green-100 text-green-800"
+      case "failed":
+        return "bg-red-100 text-red-800"
+      case "refunded":
+        return "bg-orange-100 text-orange-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
   const countries = ["UAE", "Germany", "UK", "US", "Pakistan"];
   const currencies = ["AED", "EUR", "GBP", "USD", "PKR"];
 
@@ -152,7 +193,8 @@ export function OrderManagement() {
     const matchesStatus = !statusFilter || order.status === statusFilter
     const matchesCountry = !countryFilter || order.addresses?.some(addr => addr.country === countryFilter);
     const matchesCurrency = !currencyFilter || order.currency === currencyFilter;
-    return matchesSearch && matchesStatus && matchesCountry && matchesCurrency
+    const matchesPaymentStatus = !paymentStatusFilter || order.payment_status === paymentStatusFilter;
+    return matchesSearch && matchesStatus && matchesCountry && matchesCurrency && matchesPaymentStatus
   })
 
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -193,6 +235,17 @@ export function OrderManagement() {
           <option value="cancelled">Cancelled</option>
         </select>
         <select
+          value={paymentStatusFilter}
+          onChange={(e) => setPaymentStatusFilter(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+        >
+          <option value="">All Payment Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="failed">Failed</option>
+          <option value="refunded">Refunded</option>
+        </select>
+        <select
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
@@ -205,32 +258,41 @@ export function OrderManagement() {
       </div>
 
       {/* Orders List */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-max">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                   Order
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                   Items
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   Addresses
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                  Payment Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                  Update Order Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                  Update Payment Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                   Actions
                 </th>
               </tr>
@@ -238,22 +300,22 @@ export function OrderManagement() {
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{order.order_number}</div>
                     <div className="text-sm text-gray-500">ID: {order.id}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {order.first_name} {order.last_name}
                     </div>
                     <div className="text-sm text-gray-500">{order.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.item_count} items</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.addresses?.length || 0} addresses</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {formatPrice(order.total_amount, order.currency)}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{order.item_count} items</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{order.addresses?.length || 0} addresses</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {formatPrice(order.total_amount, order.currency as any)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(order.status)}
                       <span
@@ -265,27 +327,51 @@ export function OrderManagement() {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      {getPaymentStatusIcon(order.payment_status)}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                          order.payment_status
+                        )}`}
+                      >
+                        {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <select
+                      value={order.status}
+                      onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black w-full"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <select
+                      value={order.payment_status}
+                      onChange={(e) => handlePaymentStatusUpdate(order.id, e.target.value)}
+                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black w-full"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="failed">Failed</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(order.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                      <Button variant="outline" size="sm" onClick={() => handleViewOrder(order.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                    <Button variant="outline" size="sm" onClick={() => handleViewOrder(order.id)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -303,7 +389,7 @@ export function OrderManagement() {
                     <p className="font-bold text-gray-900">{order.order_number}</p>
                     <p className="text-sm text-gray-500">{order.first_name} {order.last_name}</p>
                   </div>
-                  <p className="font-semibold text-gray-900">{formatPrice(order.total_amount, order.currency)}</p>
+                  <p className="font-semibold text-gray-900">{formatPrice(order.total_amount, order.currency as any)}</p>
                 </div>
                 <div className="mt-1">
                   <span
@@ -311,27 +397,51 @@ export function OrderManagement() {
                   >
                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                   </span>
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getPaymentStatusColor(order.payment_status)}`}
+                  >
+                    {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                  </span>
                 </div>
               </div>
               <div className="text-sm text-gray-600 flex justify-between">
                 <span>{order.item_count} items</span>
                 <span>{new Date(order.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={order.status}
-                  onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                  className="text-xs px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black flex-1"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="processing">Processing</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                <Button variant="outline" size="icon" onClick={() => handleViewOrder(order.id)}>
-                  <Eye className="h-4 w-4" />
+              <div className="flex flex-col gap-2 mt-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">Update Order Status</label>
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                    className="text-xs px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black w-full"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1 block">Update Payment Status</label>
+                  <select
+                    value={order.payment_status}
+                    onChange={(e) => handlePaymentStatusUpdate(order.id, e.target.value)}
+                    className="text-xs px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black w-full"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end mt-2">
+                <Button variant="outline" size="sm" onClick={() => handleViewOrder(order.id)}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  View
                 </Button>
               </div>
             </div>

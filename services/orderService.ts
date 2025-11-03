@@ -50,6 +50,10 @@ class OrderService {
   async updateOrderStatus(id: string, status: string): Promise<Order> {
     return apiClient.put<Order>(`/orders/${id}`, { status })
   }
+
+  async updatePaymentStatus(id: string, payment_status: string): Promise<Order> {
+    return apiClient.put<Order>(`/orders/${id}`, { payment_status })
+  }
 }
 
 export const orderService = new OrderService()

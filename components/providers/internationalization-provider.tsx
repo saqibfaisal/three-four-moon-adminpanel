@@ -15,7 +15,7 @@ interface CountryConfig {
   rtl: boolean
 }
 
-const countryConfigs: Record<Country, CountryConfig> = {
+export const countryConfigs: Record<Country, CountryConfig> = {
   UAE: { country: "UAE", currency: "AED", language: "en", flag: "🇦🇪", rtl: false },
   Germany: { country: "Germany", currency: "EUR", language: "en", flag: "🇩🇪", rtl: false },
   UK: { country: "UK", currency: "GBP", language: "en", flag: "🇬🇧", rtl: false },
@@ -96,21 +96,26 @@ export function InternationalizationProvider({ children }: { children: React.Rea
 
   const formatPrice = (price: number, currency?: Currency) => {
     const config = countryConfigs[currentCountry]
-
+    const exchangeRates = { AED: 3.67, EUR: 0.85, GBP: 0.73, USD: 1, PKR: 278 }
+    
+    // If a specific currency is provided, convert price from USD to that currency and display in that currency
     if (currency) {
+      // Price is in USD, convert to the order's currency
+      const convertedPrice = price * exchangeRates[currency]
+      
       return new Intl.NumberFormat(config.language === "ar" ? "ar-AE" : config.language, {
         style: "currency",
         currency: currency,
-      }).format(price)
+      }).format(convertedPrice)
     }
-
-    const exchangeRates = { AED: 3.67, EUR: 0.85, GBP: 0.73, USD: 1, PKR: 278 }
-    const convertedPrice = price * exchangeRates[config.currency]
+    
+    // No currency specified, convert to current selected country currency
+    const displayPrice = price * exchangeRates[config.currency]
 
     return new Intl.NumberFormat(config.language === "ar" ? "ar-AE" : config.language, {
       style: "currency",
       currency: config.currency,
-    }).format(convertedPrice)
+    }).format(displayPrice)
   }
 
   const translate = (key: string) => {

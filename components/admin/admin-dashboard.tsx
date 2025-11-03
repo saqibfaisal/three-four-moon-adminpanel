@@ -57,7 +57,7 @@ export function AdminDashboard() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {formatPrice(dashboardData?.statistics.total_revenue || 0)}
+                    ${dashboardData?.statistics.total_revenue || 0}
                   </p>
                 </div>
                 <div className="p-3 rounded-full bg-gray-100">
@@ -115,7 +115,7 @@ export function AdminDashboard() {
                       <p className="text-sm text-gray-600">{order.email}</p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="font-semibold">{formatPrice(order.total_amount)}</p>
+                      <p className="font-semibold">{formatPrice(order.total_amount, order.currency as any)}</p>
                       <p className="text-sm text-green-600">{order.status}</p>
                     </div>
                   </div>
