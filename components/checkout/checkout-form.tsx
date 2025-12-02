@@ -187,6 +187,7 @@ export function CheckoutForm() {
           postal_code: formData.zipCode,
           country: formData.country,
           phone: formData.phone,
+          email: formData.email,
         },
         payment_method: paymentMethod,
         notes: formData.notes,

@@ -22,20 +22,40 @@ export interface Review {
   updated_at: string
 }
 
+export interface DashboardOrder {
+  id: number
+  order_number: string
+  total_amount: number
+  status: string
+  created_at: string
+  currency: string
+  first_name: string
+  last_name: string
+  email: string
+}
+
+export interface LowStockProduct {
+  id: number
+  name: string
+  inventory_quantity: number
+}
+
 export interface AdminDashboard {
-  stats: {
-    totalUsers: number
-    totalProducts: number
-    totalOrders: number
-    totalRevenue: number
+  statistics: {
+    total_users: number
+    total_products: number
+    total_orders: number
+    total_revenue: number
   }
-  recentOrders: Order[]
-  topProducts: Product[]
+  recent_orders: DashboardOrder[]
+  low_stock_products: LowStockProduct[]
+  topProducts?: Product[]
 }
 
 class AdminService {
-  async getDashboard(): Promise<AdminDashboard> {
-    return apiClient.get<AdminDashboard>("/admin/dashboard")
+  async getDashboard(countryId?: string): Promise<AdminDashboard> {
+    const params = countryId && countryId !== "all" ? { country_id: countryId } : {}
+    return apiClient.get<AdminDashboard>("/admin/dashboard", params)
   }
 
   async getUsers(): Promise<User[]> {

@@ -96,14 +96,24 @@ export function InternationalizationProvider({ children }: { children: React.Rea
 
   const formatPrice = (price: number, currency?: Currency) => {
     const config = countryConfigs[currentCountry]
-    const exchangeRates = { AED: 3.67, EUR: 0.85, GBP: 0.73, USD: 1, PKR: 278 }
+    const exchangeRates: Record<Currency, number> = { AED: 3.67, EUR: 0.85, GBP: 0.73, USD: 1, PKR: 278 }
+    
+    // Map currency to appropriate locale for proper symbol display
+    const currencyToLocale: Record<Currency, string> = {
+      AED: "ar-AE",
+      EUR: "de-DE", 
+      GBP: "en-GB",
+      USD: "en-US",
+      PKR: "en-PK"
+    }
     
     // If a specific currency is provided, convert price from USD to that currency and display in that currency
     if (currency) {
-      // Price is in USD, convert to the order's currency
+      // Price is in USD, convert to the specified currency
       const convertedPrice = price * exchangeRates[currency]
+      const locale = currencyToLocale[currency]
       
-      return new Intl.NumberFormat(config.language === "ar" ? "ar-AE" : config.language, {
+      return new Intl.NumberFormat(locale, {
         style: "currency",
         currency: currency,
       }).format(convertedPrice)
@@ -111,8 +121,9 @@ export function InternationalizationProvider({ children }: { children: React.Rea
     
     // No currency specified, convert to current selected country currency
     const displayPrice = price * exchangeRates[config.currency]
+    const locale = currencyToLocale[config.currency]
 
-    return new Intl.NumberFormat(config.language === "ar" ? "ar-AE" : config.language, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: config.currency,
     }).format(displayPrice)
